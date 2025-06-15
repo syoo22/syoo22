@@ -1,10 +1,11 @@
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
 
-# ✅ 페이지 기본 설정
+# ✅ 페이지 설정
 st.set_page_config(page_title="해수욕장 방문자 예측 시스템", layout="wide")
 
-# ✅ 스타일 설정
+# ✅ 스타일
 st.markdown("""
     <style>
     .stApp {
@@ -12,7 +13,6 @@ st.markdown("""
         font-family: 'Helvetica', sans-serif;
         padding: 0 5vw;
     }
-
     .title {
         text-align: center;
         font-size: 36px;
@@ -20,14 +20,12 @@ st.markdown("""
         color: #003366;
         margin-bottom: 0.2em;
     }
-
     .subtitle {
         text-align: center;
         font-size: 16px;
         color: #004080;
         margin-bottom: 1.5em;
     }
-
     .result-card {
         background-color: #ffffffdd;
         padding: 20px;
@@ -38,17 +36,10 @@ st.markdown("""
         margin-left: auto;
         margin-right: auto;
     }
-
     @media screen and (max-width: 600px) {
-        .title {
-            font-size: 26px;
-        }
-        .subtitle {
-            font-size: 14px;
-        }
-        .result-card {
-            padding: 15px;
-        }
+        .title { font-size: 26px; }
+        .subtitle { font-size: 14px; }
+        .result-card { padding: 15px; }
     }
     </style>
 """, unsafe_allow_html=True)
@@ -66,11 +57,11 @@ def load_data():
 
 df = load_data()
 
-# ✅ 사용자 입력
+# ✅ 해수욕장 선택
 beach_names = sorted(df["해수욕장이름"].unique())
 selected_beach = st.selectbox("📍 해수욕장을 선택하세요", beach_names)
 
-# ✅ 운영 기간 표시
+# ✅ 운영 기간 안내
 beach_df = df[df["해수욕장이름"] == selected_beach]
 if not beach_df.empty:
     open_date = beach_df["해수욕장일일일자"].min().strftime('%Y-%m-%d')
@@ -82,7 +73,7 @@ min_date = pd.to_datetime("2025-06-01")
 max_date = pd.to_datetime("2025-08-31")
 selected_date = st.date_input("🔮 방문 날짜를 선택하세요", min_value=min_date, max_value=max_date)
 
-# ✅ 예측 결과
+# ✅ 예측 결과 카드
 if st.button("🔍 예측 결과 보기"):
     result = df[
         (df["해수욕장이름"] == selected_beach) &
@@ -106,7 +97,21 @@ if st.button("🔍 예측 결과 보기"):
     else:
         st.warning("❗ 선택한 날짜의 예측 데이터가 없습니다. 다른 날짜를 선택해주세요.")
 
-# ✅ 지도 삽입
+    # ✅ 방문자수 추이 그래프
+    st.markdown("---")
+    st.markdown(f"### 📊 {selected_beach}의 6~8월 방문자수 추이")
+    beach_trend = df[df["해수욕장이름"] == selected_beach].sort_values("해수욕장일일일자")
+
+    fig, ax = plt.subplots(figsize=(10, 4))
+    ax.plot(beach_trend["해수욕장일일일자"], beach_trend["예상 방문자수"], marker='o', linewidth=2, color="#0072C6")
+    ax.set_title(f"{selected_beach} 방문자수 추이 (2025.06 ~ 08)", fontsize=14)
+    ax.set_xlabel("날짜")
+    ax.set_ylabel("예상 방문자수")
+    ax.tick_params(axis='x', labelrotation=45)
+    ax.grid(True)
+    st.pyplot(fig)
+
+# ✅ 혼잡도 지도
 st.markdown("---")
 st.markdown("### 🗺️ 해수욕장 전체 예측 혼잡도 지도")
 with open("2025_해수욕장_예상혼잡도지도_최종버전.html", "r", encoding="utf-8") as f:
