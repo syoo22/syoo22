@@ -109,8 +109,8 @@ if st.button("🔍 예측 결과 보기"):
 @st.cache_data
 def load_past_data():
     past = pd.read_csv("해양수산부_해수욕장일일이용객수_정보.csv")
-    past["일자"] = pd.to_datetime(past["일자"])  # 수정된 컬럼명
-    past["월일"] = past["일자"].dt.strftime("%m-%d")
+    past["일자"] = pd.to_datetime(past["이용일자"])  # 수정된 컬럼명
+    past["월일"] = past["이용일자"].dt.strftime("%m-%d")
     return past
 
 past_df = load_past_data()
