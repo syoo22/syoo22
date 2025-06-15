@@ -131,14 +131,25 @@ if not past_beach_df.empty:
     avg_by_day["날짜"] = pd.to_datetime("2025-" + avg_by_day["월일"], format="%Y-%m-%d")
 
     import altair as alt
-    past_chart = alt.Chart(avg_by_day).mark_line(point=True).encode(
-        x=alt.X("날짜:T", title="날짜"),
-        y=alt.Y("평균이용객수:Q", title="과거 평균 이용객 수"),
-        tooltip=["날짜:T", "평균이용객수:Q"]
-    ).properties(
-        width=700,
-        height=300,
+    past_chart = (
+        alt.Chart(avg_by_day)
+        .mark_line(point=True)
+        .encode(
+            x=alt.X("날짜:T", title="날짜"),
+            y=alt.Y("평균이용객수:Q", title="과거 평균 이용객 수"),
+            tooltip=["날짜:T", "평균이용객수:Q"]
+        )
+        .properties(
+            width=700,
+            height=300,
+            title=f"📊 {selected_beach}의 과거 일자별 평균 방문자수 추세"
+        )
+    )
 
+    st.markdown("### ⏳ 과거 평균 방문자수 추세")
+    st.altair_chart(past_chart, use_container_width=True)
+else:
+    st.info(f"📭 과거 '{selected_beach}' 데이터가 없어 추세 그래프를 그릴 수 없습니다.")
 
 # HTML 지도 삽입
 st.markdown("---")
