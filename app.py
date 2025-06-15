@@ -1,6 +1,11 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
+import matplotlib as mpl
+
+# ✅ 한글 폰트 설정
+mpl.rcParams['font.family'] = 'NanumGothic'
 
 # ✅ 페이지 설정
 st.set_page_config(page_title="해수욕장 방문자 예측 시스템", layout="wide")
