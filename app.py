@@ -70,7 +70,7 @@ df = load_data()
 beach_names = sorted(df["해수욕장명"].unique())
 selected_beach = st.selectbox("📍 해수욕장을 선택하세요", beach_names)
 
-# 해당 해수욕장의 예상 운영 기간 표시
+# 예상 운영 기간 표시
 beach_df = df[df["해수욕장명"] == selected_beach]
 if not beach_df.empty:
     open_date = beach_df["해수욕장일일일자"].min().strftime('%Y-%m-%d')
@@ -82,7 +82,7 @@ min_date = pd.to_datetime("2025-06-01")
 max_date = pd.to_datetime("2025-08-31")
 selected_date = st.date_input("🔮 방문 날짜를 선택하세요", min_value=min_date, max_value=max_date)
 
-# ✅ 예측 버튼
+# ✅ 예측 결과 보기
 if st.button("🔍 예측 결과 보기"):
     result = df[
         (df["해수욕장명"] == selected_beach) &
@@ -92,12 +92,9 @@ if st.button("🔍 예측 결과 보기"):
     if not result.empty:
         count = int(result["예상 방문자수"].values[0])
         congestion = result["예상 혼잡도"].values[0]
-
-        # 색상 매핑
         color_map = {"여유": "#4CAF50", "보통": "#FFC107", "혼잡": "#F44336"}
         color = color_map.get(congestion, "#333")
 
-        # 결과 카드 출력
         st.markdown(f"""
         <div class="result-card">
             <h4 style="color:#0072C6;">📅 {selected_date.strftime('%Y-%m-%d')} {selected_beach}의 예측 결과</h4>
@@ -108,17 +105,15 @@ if st.button("🔍 예측 결과 보기"):
     else:
         st.warning("❗ 선택한 날짜의 예측 데이터가 없습니다. 다른 날짜를 선택해주세요.")
 
-# ✅ 과거 평균 방문자수 추세 그래프 추가
+# ✅ 과거 평균 방문자수 추세 그래프
 @st.cache_data
 def load_past_data():
     past = pd.read_csv("해양수산부_해수욕장일일이용객수_정보.csv")
-    past["측정일자"] = pd.to_datetime(past["측정일자"])
-    past["월일"] = past["측정일자"].dt.strftime("%m-%d")  # 연도 제거
+    past["일자"] = pd.to_datetime(past["일자"])  # 수정된 컬럼명
+    past["월일"] = past["일자"].dt.strftime("%m-%d")
     return past
 
 past_df = load_past_data()
-
-# 선택된 해수욕장 필터링
 past_beach_df = past_df[past_df["해수욕장명"] == selected_beach]
 
 if not past_beach_df.empty:
@@ -151,7 +146,7 @@ if not past_beach_df.empty:
 else:
     st.info(f"📭 과거 '{selected_beach}' 데이터가 없어 추세 그래프를 그릴 수 없습니다.")
 
-# HTML 지도 삽입
+# ✅ HTML 지도 삽입
 st.markdown("---")
 st.markdown("### 🗺️ 해수욕장 전체 예측 혼잡도 지도")
 with open("2025_해수욕장_예상혼잡도지도_최종버전.html", "r", encoding="utf-8") as f:
