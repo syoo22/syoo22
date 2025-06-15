@@ -67,11 +67,11 @@ def load_data():
 df = load_data()
 
 # ✅ 사용자 입력
-beach_names = sorted(df["해수욕장이름"].unique())
+beach_names = sorted(df["해수욕장명"].unique())
 selected_beach = st.selectbox("📍 해수욕장을 선택하세요", beach_names)
 
 # 해당 해수욕장의 예상 운영 기간 표시
-beach_df = df[df["해수욕장이름"] == selected_beach]
+beach_df = df[df["해수욕장명"] == selected_beach]
 if not beach_df.empty:
     open_date = beach_df["해수욕장일일일자"].min().strftime('%Y-%m-%d')
     close_date = beach_df["해수욕장일일일자"].max().strftime('%Y-%m-%d')
@@ -85,7 +85,7 @@ selected_date = st.date_input("🔮 방문 날짜를 선택하세요", min_value
 # ✅ 예측 버튼
 if st.button("🔍 예측 결과 보기"):
     result = df[
-        (df["해수욕장이름"] == selected_beach) &
+        (df["해수욕장명"] == selected_beach) &
         (df["해수욕장일일일자"] == pd.to_datetime(selected_date))
     ]
 
