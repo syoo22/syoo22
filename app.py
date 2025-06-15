@@ -3,7 +3,7 @@ import pandas as pd
 import folium
 from streamlit_folium import st_folium
 
-# ✅ 페이지 기본 설정
+# ✅ 페이지 설정
 st.set_page_config(page_title="해수욕장 방문자 예측 시스템", layout="wide")
 
 # ✅ 스타일 적용
@@ -43,7 +43,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ✅ 타이틀
+# ✅ 타이틀 출력
 st.markdown("<div class='title'>🏖️ 해수욕장 방문자 예측 시스템</div>", unsafe_allow_html=True)
 st.markdown("<div class='subtitle'>2025년 전국 해수욕장 예상 방문자수 및 혼잡도 시각화</div>", unsafe_allow_html=True)
 
@@ -51,6 +51,7 @@ st.markdown("<div class='subtitle'>2025년 전국 해수욕장 예상 방문자�
 @st.cache_data
 def load_data():
     df = pd.read_csv("2025_해수욕장_예측결과.csv")
+    df["일자"] = pd.to_datetime(df["해수욕장일일일자"])  # ✅ 수정 포인트
     return df
 
 df = load_data()
@@ -58,7 +59,7 @@ df = load_data()
 # ✅ 지도 생성
 m = folium.Map(location=[36.5, 127.8], zoom_start=7)
 
-# ✅ 혼잡도 컬러 설정 함수
+# ✅ 색상 매핑 함수
 def get_color(congestion):
     if congestion == "높음":
         return "red"
@@ -67,18 +68,19 @@ def get_color(congestion):
     else:
         return "green"
 
-# ✅ 마커 추가
+# ✅ 마커 표시
 for _, row in df.iterrows():
     folium.Marker(
         location=[row["위도"], row["경도"]],
         popup=folium.Popup(f"""
-        <b>{row["해수욕장명"]}</b><br>
-        예상 방문자수: {int(row["예상방문자수"]):,}명<br>
-        예상 혼잡도: {row["예상혼잡도"]}
+            <b>{row["해수욕장명"]}</b><br>
+            예측 일자: {row["일자"].date()}<br>
+            예상 방문자수: {int(row["예상 방문자수"]):,}명<br>
+            예상 혼잡도: {row["예상 혼잡도"]}
         """, max_width=300),
-        icon=folium.Icon(color=get_color(row["예상혼잡도"]))
+        icon=folium.Icon(color=get_color(row["예상 혼잡도"]))
     ).add_to(m)
 
 # ✅ 지도 출력
-st.subheader("🗺️ 전국 해수욕장 위치 및 예상 정보")
+st.subheader("🗺️ 전국 해수욕장 위치 및 예측 정보")
 st_data = st_folium(m, width=900, height=600)
