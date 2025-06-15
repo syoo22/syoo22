@@ -107,3 +107,11 @@ if st.button("🔍 예측 결과 보기"):
         """, unsafe_allow_html=True)
     else:
         st.warning("❗ 선택한 날짜의 예측 데이터가 없습니다. 다른 날짜를 선택해주세요.")
+
+
+# HTML 지도 삽입
+st.markdown("---")
+st.markdown("### 🗺️ 해수욕장 전체 예측 혼잡도 지도")
+with open("2025_해수욕장_예상혼잡도지도_최종버전.html", "r", encoding="utf-8") as f:
+    html_data = f.read()
+    st.components.v1.html(html_data, height=600, scrolling=True)
