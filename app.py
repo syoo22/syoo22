@@ -108,6 +108,37 @@ if st.button("🔍 예측 결과 보기"):
     else:
         st.warning("❗ 선택한 날짜의 예측 데이터가 없습니다. 다른 날짜를 선택해주세요.")
 
+# ✅ 과거 평균 방문자수 추세 그래프 추가
+@st.cache_data
+def load_past_data():
+    past = pd.read_csv("해양수산부_해수욕장일일이용객수_정보.csv")
+    past["측정일자"] = pd.to_datetime(past["측정일자"])
+    past["월일"] = past["측정일자"].dt.strftime("%m-%d")  # 연도 제거
+    return past
+
+past_df = load_past_data()
+
+# 선택된 해수욕장 필터링
+past_beach_df = past_df[past_df["해수욕장명"] == selected_beach]
+
+if not past_beach_df.empty:
+    avg_by_day = (
+        past_beach_df.groupby("월일")["이용객수"]
+        .mean()
+        .reset_index()
+        .rename(columns={"이용객수": "평균이용객수"})
+    )
+    avg_by_day["날짜"] = pd.to_datetime("2025-" + avg_by_day["월일"], format="%Y-%m-%d")
+
+    import altair as alt
+    past_chart = alt.Chart(avg_by_day).mark_line(point=True).encode(
+        x=alt.X("날짜:T", title="날짜"),
+        y=alt.Y("평균이용객수:Q", title="과거 평균 이용객 수"),
+        tooltip=["날짜:T", "평균이용객수:Q"]
+    ).properties(
+        width=700,
+        height=300,
+
 
 # HTML 지도 삽입
 st.markdown("---")
