@@ -26,7 +26,7 @@ st.markdown("<p style='text-align: center;'>해수욕장과 날짜를 선택하�
 
 # 🏝️ 해수욕장 선택
 st.markdown("🔴 <b>해수욕장을 선택하세요</b>", unsafe_allow_html=True)
-beach_names = sorted(df["해수욕장명"].unique())
+beach_names = sorted(df["해수욕장이름"].unique())
 selected_beach = st.selectbox("", beach_names)
 
 # 📅 날짜 선택
