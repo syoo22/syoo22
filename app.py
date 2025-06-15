@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-# 데이터 불러오기
+# 📦 데이터 로딩
 @st.cache_data
 def load_data():
     df = pd.read_csv("2025_해수욕장_예측결과.csv")
@@ -10,72 +10,76 @@ def load_data():
 
 df = load_data()
 
-# 🌊 배경 꾸미기 (바다 느낌 그라데이션)
+# 🎨 바다 느낌 배경 스타일 추가
 page_bg = """
 <style>
 body {
-    background: linear-gradient(to bottom, #b3ecff, #ffffff);
+    background: linear-gradient(to bottom right, #a2d4f4, #d1f0fa);
 }
 </style>
 """
 st.markdown(page_bg, unsafe_allow_html=True)
 
-# 🧭 제목
-st.markdown("""
-<h1 style='text-align: center; color: #0077b6;'>🌊 2025 해수욕장 방문자 예측 시스템</h1>
-""", unsafe_allow_html=True)
+# 📌 제목 및 안내
+st.markdown("<h1 style='text-align: center;'>🏖️ 해수욕장 방문자 예측 시스템</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center;'>해수욕장과 날짜를 선택하면 예상 방문자수와 혼잡도를 알려드려요!</p>", unsafe_allow_html=True)
 
-st.markdown("")
+# 🏝️ 해수욕장 선택
+st.markdown("🔴 <b>해수욕장을 선택하세요</b>", unsafe_allow_html=True)
+beach_names = sorted(df["해수욕장명"].unique())
+selected_beach = st.selectbox("", beach_names)
 
-# 🏖️ 해수욕장 선택
-selected_beach = st.selectbox("🏖️ 해수욕장을 선택하세요", df["해수욕장이름"].unique())
+# 📅 날짜 선택
+st.markdown("🟣 <b>방문 날짜를 선택하세요</b>", unsafe_allow_html=True)
+available_dates = df[df["해수욕장명"] == selected_beach]["해수욕장일일일자"].sort_values().unique()
+min_date = pd.to_datetime(available_dates.min())
+max_date = pd.to_datetime(available_dates.max())
+selected_date = st.date_input("", value=min_date, min_value=min_date, max_value=max_date)
 
-# 📅 개장일/폐장일 구하기
-beach_df = df[df["해수욕장이름"] == selected_beach]
-open_date = beach_df["해수욕장일일일자"].min()
-close_date = beach_df["해수욕장일일일자"].max()
-open_str = open_date.strftime("%Y년 %m월 %d일")
-close_str = close_date.strftime("%Y년 %m월 %d일")
+# 🔍 버튼
+if st.button("🔍 예측 결과 보기"):
+    filtered = df[(df["해수욕장명"] == selected_beach) & (df["해수욕장일일일자"] == pd.to_datetime(selected_date))]
+    
+    # 운영기간 출력
+    beach_dates = df[df["해수욕장명"] == selected_beach]["해수욕장일일일자"]
+    open_day = beach_dates.min().strftime("%Y-%m-%d")
+    close_day = beach_dates.max().strftime("%Y-%m-%d")
+    
+    st.markdown(
+        f"""
+        <div style="margin-bottom: 20px; color:#333;">
+        📅 <b>{selected_beach}</b>의 예상 운영 기간은 <b>{open_day}</b>부터 <b>{close_day}</b>까지입니다.
+        </div>
+        """, unsafe_allow_html=True)
 
-# 🔔 예상 운영 기간 표시
-st.markdown(f"""
-<div style="margin-bottom: 1rem; font-size: 15px; color: #004080;">
-🔔 <b>{selected_beach}</b>의 예상 운영 기간은 <b>{open_str}</b>부터 <b>{close_str}</b>까지입니다.
-</div>
-""", unsafe_allow_html=True)
+    if not filtered.empty:
+        row = filtered.iloc[0]
+        visitor = f"{int(row['예상 방문자수']):,}명"
+        level = row['예상 혼잡도']
 
-# 📆 날짜 선택
-selected_date = st.date_input("📅 방문할 날짜를 선택하세요 (6월 1일 ~ 8월 31일 사이)", 
-                              min_value=open_date, max_value=close_date)
+        # 🎨 혼잡도 색상
+        color = {
+            "여유": "green",
+            "보통": "orange",
+            "혼잡": "red"
+        }.get(level, "black")
 
-# 🔍 예측 결과 확인
-result = beach_df[beach_df["해수욕장일일일자"] == pd.to_datetime(selected_date)]
-
-if not result.empty:
-    visitors = int(result["예상방문자수"].values[0])
-    congestion = result["예상혼잡도"].values[0]
-
-    # 혼잡도 색상
-    if congestion == "여유":
-        color = "#38b000"
-    elif congestion == "보통":
-        color = "#ffcc00"
+        st.markdown(
+            f"""
+            <div style="background-color: #e9f7fc; padding: 20px; border-radius: 10px;">
+                <h4>📅 {selected_date} <b>{selected_beach}</b>의 예측 결과</h4>
+                <p>👥 <b>예상 방문자수:</b> {visitor}</p>
+                <p style="color:{color};">📌 <b>예상 혼잡도:</b> {level}</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
     else:
-        color = "#d00000"
-
-    # 🎯 예측 결과 박스
-    st.markdown(f"""
-    <div style="padding: 1.2rem; border-radius: 10px; background-color: #f0f8ff; margin-top: 20px;">
-        <h3 style="color: #0077b6;">📍 {selected_beach}의 {selected_date.strftime('%m월 %d일')} 예측</h3>
-        <p style="font-size: 18px;">👥 예상 방문자 수: <b>{visitors:,}명</b></p>
-        <p style="font-size: 18px;">🚦 예상 혼잡도: <b style="color: {color};">{congestion}</b></p>
-    </div>
-    """, unsafe_allow_html=True)
-
-else:
-    # 📛 데이터 없을 때 안내
-    st.markdown("""
-    <div style="padding: 1rem; background-color: #fff3cd; border-radius: 8px; color: #856404; font-size: 16px;">
-    ⚠️ 선택한 날짜의 예측 데이터가 없습니다. 다른 날짜를 선택해주세요.
-    </div>
-    """, unsafe_allow_html=True)
+        st.markdown(
+            f"""
+            <div style="background-color: #ffe0e0; padding: 20px; border-radius: 10px;">
+                <p>😥 <b>선택한 날짜의 예측 데이터가 없습니다.</b><br>다른 날짜를 선택해주세요.</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
