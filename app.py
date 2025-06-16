@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # ✅ 페이지 기본 설정
-st.set_page_config(page_title="해수욕장 방문자 예측 시스템", layout="wide")
+st.set_page_config(page_title="2025 해수욕장 방문자 예측 시스템", layout="wide")
 
 # ✅ 스타일 설정
 st.markdown("""
@@ -54,8 +54,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ✅ 제목
-st.markdown("<div class='title'>🏖️ 해수욕장 방문자 예측 시스템</div>", unsafe_allow_html=True)
+st.markdown("<div class='title'>🏖️ 2025 해수욕장 방문자 예측 시스템</div>", unsafe_allow_html=True)
 st.markdown("<div class='subtitle'>해수욕장과 날짜를 선택하면 예상 방문자수와 혼잡도를 알려드려요!</div>", unsafe_allow_html=True)
+
+# ✅ 설명 문구 추가 (👉 여기!)
+st.markdown("<p style='text-align:center; font-size:16px;'>📍 전국 276개 해수욕장의 예상 방문자 수와 혼잡도를 날짜별로 확인해보세요.</p>", unsafe_allow_html=True)
 
 # ✅ 데이터 로딩
 @st.cache_data
