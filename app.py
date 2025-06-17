@@ -87,7 +87,6 @@ if selected_sido:
                 level = row["예상 혼잡도"].values[0]
                 st.markdown(f"<div class='result-card'><h4>📅 {selected_date} {selected_beach}의 예측 결과</h4><br>👥 예상 방문자수: <b>{visitors:,}명</b><br>🔵 예상 혼잡도: <b>{level}</b></div>", unsafe_allow_html=True)
 
-                # ✅ 시/도 단위 덜 혼잡한 해수욕장 추천
                 if level == "혼잡":
                     st.markdown("⚠️ 현재 선택한 해수욕장은 매우 혼잡해요. 같은 지역 내 덜 붐비는 해수욕장을 추천해드릴게요.")
                     alt = df[
