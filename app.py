@@ -1,10 +1,32 @@
-import streamlit as st
-import pandas as pd
-
-# ✅ 페이지 기본 설정
 st.set_page_config(page_title="해수욕장 방문자 예측 시스템", layout="wide")
 
-# ✅ 스타일 설정
+import streamlit as st
+import pandas as pd
+import folium
+from streamlit_folium import st_folium
+from datetime import date
+
+@st.cache_data
+def load_data():
+    df = pd.read_csv("2025_해수욕장_예측결과_최종.csv")
+    df["해수욕장일일일자"] = pd.to_datetime(df["해수욕장일일일자"])
+    return df
+
+df = load_data()
+
+sido_list = sorted(df["시/도"].dropna().unique())
+sigungu_dict = {
+    sido: sorted(df[df["시/도"] == sido]["시/군/구"].dropna().unique())
+    for sido in sido_list
+}
+beach_dict = {
+    (sido, sigungu): sorted(df[
+        (df["시/도"] == sido) & (df["시/군/구"] == sigungu)
+    ]["해수욕장이름"].dropna().unique())
+    for sido in sido_list
+    for sigungu in sigungu_dict[sido]
+}
+
 st.markdown("""
     <style>
     .stApp {
@@ -38,80 +60,52 @@ st.markdown("""
         margin-left: auto;
         margin-right: auto;
     }
-
-    @media screen and (max-width: 600px) {
-        .title {
-            font-size: 26px;
-        }
-        .subtitle {
-            font-size: 14px;
-        }
-        .result-card {
-            padding: 15px;
-        }
-    }
     </style>
 """, unsafe_allow_html=True)
 
-# ✅ 제목
-st.markdown("<div class='title'>🏖️ 해수욕장 방문자 예측 시스템</div>", unsafe_allow_html=True)
+st.markdown("<div class='title'>🏖️ 2025 해수욕장 방문자 예측 시스템</div>", unsafe_allow_html=True)
 st.markdown("<div class='subtitle'>해수욕장과 날짜를 선택하면 예상 방문자수와 혼잡도를 알려드려요!</div>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; font-size:17px; margin-bottom:1rem;'>📍 전국 해수욕장의 예상 방문자 수와 혼잡도를 날짜별로 확인해보세요.</p>", unsafe_allow_html=True)
 
-# ✅ 설명 문구 추가 
-st.markdown("<p style='text-align:center; font-size:16px;'>📍 전국 276개 해수욕장의 예상 방문자 수와 혼잡도를 날짜별로 확인해보세요.</p>", unsafe_allow_html=True)
+selected_sido = st.selectbox("📍 시/도를 선택하세요", sido_list)
 
-# ✅ 데이터 로딩
-@st.cache_data
-def load_data():
-    df = pd.read_csv("2025_해수욕장_예측결과.csv")
-    df["해수욕장일일일자"] = pd.to_datetime(df["해수욕장일일일자"])
-    return df
+if selected_sido:
+    selected_sigungu = st.selectbox("🏞️ 시/군/구를 선택하세요", sigungu_dict[selected_sido])
 
-df = load_data()
+    if selected_sigungu:
+        selected_beach = st.selectbox("🏖️ 해수욕장을 선택하세요", beach_dict[(selected_sido, selected_sigungu)])
+        beach_dates = df[df["해수욕장이름"] == selected_beach]["해수욕장일일일자"]
+        open_date, close_date = beach_dates.min().date(), beach_dates.max().date()
+        st.markdown(f"📅 **{selected_beach}**의 예상 운영 기간은 **{open_date}부터 {close_date}까지**입니다.")
 
-# ✅ 사용자 입력
-beach_names = sorted(df["해수욕장이름"].unique())
-selected_beach = st.selectbox("📍 해수욕장을 선택하세요", beach_names)
+        selected_date = st.date_input("📅 방문 날짜를 선택하세요", value=open_date, min_value=open_date, max_value=close_date)
 
-# ✅ 운영 기간 표시
-beach_df = df[df["해수욕장이름"] == selected_beach]
-if not beach_df.empty:
-    open_date = beach_df["해수욕장일일일자"].min().strftime('%Y-%m-%d')
-    close_date = beach_df["해수욕장일일일자"].max().strftime('%Y-%m-%d')
-    st.markdown(f"🧾 <b>{selected_beach}</b>의 예상 운영 기간은 <b>{open_date}</b>부터 <b>{close_date}</b>까지입니다.", unsafe_allow_html=True)
+        if st.button("🔍 예측 결과 보기"):
+            row = df[(df["해수욕장이름"] == selected_beach) & (df["해수욕장일일일자"] == pd.to_datetime(selected_date))]
+            if not row.empty:
+                visitors = int(row["예상 방문자수"].values[0])
+                level = row["예상 혼잡도"].values[0]
+                st.markdown(f"<div class='result-card'><h4>📅 {selected_date} {selected_beach}의 예측 결과</h4><br>👥 예상 방문자수: <b>{visitors:,}명</b><br>🔵 예상 혼잡도: <b>{level}</b></div>", unsafe_allow_html=True)
 
-# ✅ 날짜 선택
-min_date = pd.to_datetime("2025-06-01")
-max_date = pd.to_datetime("2025-08-31")
-selected_date = st.date_input("🔮 방문 날짜를 선택하세요", min_value=min_date, max_value=max_date)
+                # ✅ 시/도 단위 덜 혼잡한 해수욕장 추천
+                if level == "혼잡":
+                    st.markdown("⚠️ 현재 선택한 해수욕장은 매우 혼잡해요. 같은 지역 내 덜 붐비는 해수욕장을 추천해드릴게요.")
+                    alt = df[
+                        (df["시/도"] == row["시/도"].values[0]) &
+                        (df["해수욕장일일일자"] == pd.to_datetime(selected_date)) &
+                        (df["예상 혼잡도"].isin(["여유", "보통"])) &
+                        (df["해수욕장이름"] != selected_beach)
+                    ][["시/군/구", "해수욕장이름", "예상 방문자수", "예상 혼잡도"]].sort_values("예상 방문자수")
 
-# ✅ 예측 결과
-if st.button("🔍 예측 결과 보기"):
-    result = df[
-        (df["해수욕장이름"] == selected_beach) &
-        (df["해수욕장일일일자"] == pd.to_datetime(selected_date))
-    ]
-
-    if not result.empty:
-        count = int(result["예상 방문자수"].values[0])
-        congestion = result["예상 혼잡도"].values[0]
-
-        color_map = {"여유": "#4CAF50", "보통": "#FFC107", "혼잡": "#F44336"}
-        color = color_map.get(congestion, "#333")
-
-        st.markdown(f"""
-        <div class="result-card">
-            <h4 style="color:#0072C6;">📅 {selected_date.strftime('%Y-%m-%d')} {selected_beach}의 예측 결과</h4>
-            <p style="font-size:17px;">👥 <b>예상 방문자수:</b> {count:,}명</p>
-            <p style="font-size:17px;">📌 <b style="color:{color};">예상 혼잡도: {congestion}</b></p>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.warning("❗ 선택한 날짜의 예측 데이터가 없습니다. 다른 날짜를 선택해주세요.")
-
-# ✅ 지도 삽입
-st.markdown("---")
-st.markdown("### 🗺️ 해수욕장 전체 예측 혼잡도 지도")
-with open("2025_해수욕장_예상혼잡도지도_최종버전.html", "r", encoding="utf-8") as f:
-    html_data = f.read()
-    st.components.v1.html(html_data, height=600, scrolling=True)
+                    if alt.empty:
+                        st.info("같은 시/도 내에 덜 혼잡한 다른 해수욕장이 없어요 😥")
+                    else:
+                        st.markdown("### 🧭 같은 지역의 덜 혼잡한 해수욕장 추천")
+                        st.dataframe(alt.rename(columns={
+                            "시/군/구": "시/군/구",
+                            "해수욕장이름": "해수욕장",
+                            "예상 방문자수": "예상 방문자수(명)",
+                            "예상 혼잡도": "혼잡도"
+                        }), hide_index=True)
+            else:
+                st.warning("해당 날짜에 대한 예측 데이터가 없습니다.")
